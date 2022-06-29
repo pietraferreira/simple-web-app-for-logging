@@ -1,8 +1,16 @@
+#[macro_use] extern crate nickel;
+use nickel::Nickel;
+
 extern crate chrono;
-use chrono::*;
+use chrono::{DateTime,Local};
+
+extern crate clap;
+use clap::{App,Arg};
+
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::io;
+
 
 fn formatted_time_entry() -> String {
     let local: DateTime<Local> = Local::now();
@@ -28,11 +36,21 @@ fn log_time(filename: &'static str) -> io::Result<()>{
     Ok(())
 }
 
-fn main() {
-    let local: DateTime<Local> = Local::now();
-    println!("{}", local);
+fn do_log_time() -> String {
     match log_time("log.txt") {
-        Ok(..) => println!("Created file"),
-        Err(..) => println!("Failed to create file")
+        Ok(..) => format!("Created file"),
+        Err(e) => format!("Failed to create file, error: {}", e)
     }
+}
+
+fn main() {
+    let mut server = Nickel::new();
+
+    server.utilize(router! {
+        get "**" => |_req, _res| {
+            do_log_time();
+        }
+    });
+
+    server.listen("localhost:6767");
 }
