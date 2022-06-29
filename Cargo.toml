@@ -8,3 +8,4 @@ author = "Pietra Ferreira <piferreira@icloud.com>"
 
 [dependencies]
 nickel = "*"
+chrono = "0.2"
