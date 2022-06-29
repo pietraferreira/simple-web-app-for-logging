@@ -28,27 +28,46 @@ fn record_entry_in_log(filename: &str, bytes: &[u8]) -> io::Result<()> {
     Ok(())
 }
 
-fn log_time(filename: &'static str) -> io::Result<()>{
+fn log_time(filename: &String) -> io::Result<(String)>{
     let entry = formatted_time_entry();
-    let bytes = entry.as_bytes();
+    {
+        let bytes = entry.as_bytes();
 
-    record_entry_in_log(filename, &bytes)?;
-    Ok(())
+        record_entry_in_log(filename, &bytes)?;
+    }
+    Ok(entry)
 }
 
-fn do_log_time() -> String {
-    match log_time("log.txt") {
-        Ok(..) => format!("Created file"),
+fn do_log_time(logfile_path: &String, auth_token: &Option<String>) -> String {
+    match log_time(logfile_path) {
+        Ok(entry) => format!("Created file, entry logged: {}", entry),
         Err(e) => format!("Failed to create file, error: {}", e)
     }
 }
 
 fn main() {
-    let mut server = Nickel::new();
+    let matches = App::new("simple-log-web-app").version("v0.0.1")
+        .arg(Arg::with_name("LOG FILE")
+             .short('l')
+             .long("logfile")
+             .required(true)
+             .takes_value(true))
+        .arg(Arg::with_name("AUTH TOKEN")
+             .short('t')
+             .long("token")
+             .takes_value(true))
+        .get_matches();
 
+    let logfile_path = matches.value_of("LOG FILE").unwrap().to_string();
+    let auth_token = match matches.value_of("AUTH TOKEN") {
+        Some(str) => Some(str.to_string()),
+        None => None
+    };
+
+    let mut server = Nickel::new();
     server.utilize(router! {
         get "**" => |_req, _res| {
-            do_log_time();
+            do_log_time(&logfile_path, &auth_token);
         }
     });
 
